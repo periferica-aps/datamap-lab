@@ -59,7 +59,9 @@ function preload() {
 }
 
 function setup() {
-  pixelDensity(1);
+  // La copertina usa windowWidth: sui display Retina serve un backing buffer
+  // più denso per non perdere nitidezza, soprattutto durante il pinch zoom.
+  pixelDensity(min(3, window.devicePixelRatio || 1));
   createCanvas(windowWidth, windowHeight);
   textFont(sourceCodeProRegular);
   ROWH = (GRID_BOTTOM - GRID_TOP) / NROWS;

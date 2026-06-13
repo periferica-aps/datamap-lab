@@ -25,7 +25,7 @@ const loadObserver = new IntersectionObserver((entries) => {
     shell.appendChild(frame);
     loadObserver.unobserve(shell);
   });
-}, { rootMargin: '75% 0px' });
+}, { rootMargin: '0px', threshold: 0.01 });
 
 const activityObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry) => sendVisibility(entry.target, entry.isIntersecting));
