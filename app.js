@@ -16,7 +16,9 @@ const loadObserver = new IntersectionObserver((entries) => {
     const frame = document.createElement('iframe');
     frame.src = shell.dataset.src;
     frame.title = shell.dataset.title;
-    frame.loading = 'lazy';
+    // The observer already controls lazy loading. Once a sketch is close to
+    // the viewport, load it immediately so it is ready before it is visible.
+    frame.loading = 'eager';
     frame.allow = 'fullscreen';
     frame.addEventListener('load', () => {
       shell.querySelector('.loader')?.remove();
@@ -25,7 +27,7 @@ const loadObserver = new IntersectionObserver((entries) => {
     shell.appendChild(frame);
     loadObserver.unobserve(shell);
   });
-}, { rootMargin: '0px', threshold: 0.01 });
+}, { rootMargin: '100% 0px', threshold: 0.01 });
 
 const activityObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry) => sendVisibility(entry.target, entry.isIntersecting));
