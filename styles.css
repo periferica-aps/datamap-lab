@@ -19,6 +19,34 @@ body {
   overflow-x: hidden;
 }
 
+.pdf-download {
+  position: fixed;
+  z-index: 20;
+  right: 20px;
+  bottom: 20px;
+  padding: 11px 14px;
+  border: 1px solid #fff;
+  color: #fff;
+  background: rgba(0, 0, 0, .82);
+  font: 600 11px/1 "Source Code Pro", monospace;
+  letter-spacing: .06em;
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.pdf-download:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .pdf-download:hover {
+    color: #000;
+    background: #fff;
+  }
+}
+
 .document {
   width: 100%;
 }
@@ -76,5 +104,14 @@ body {
 
   .document-page {
     min-height: auto;
+  }
+}
+
+@media (max-width: 520px) {
+  .pdf-download {
+    right: 12px;
+    bottom: 12px;
+    padding: 10px 12px;
+    font-size: 10px;
   }
 }
