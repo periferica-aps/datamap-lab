@@ -31,7 +31,7 @@ const CFG = {
   capture: false,
   captureFormat: 'webm',
   screenPixelDensity: "auto", // "auto" = nitido su HiDPI/Retina, 1 = resa legacy
-  superSample: 3,             // supersampling: 2 = molto più nitido (testi ruotati, curve), 1 = legacy. 3 = max ma pesante
+  superSample: 1,             // 1 mantiene fluida la landing; aumentare solo per export offline
 
   // STILE GLOBALE
   bg: 0,
@@ -170,7 +170,7 @@ function applyCanvasPixelDensity(){
     : CFG.screenPixelDensity;
   // Il supersampling moltiplica la densità del display: si disegna a risoluzione
   // più alta e il browser la rimpicciolisce, levigando bordi e testi ruotati.
-  pixelDensity(Math.max(1, density) * Math.max(1, CFG.superSample));
+  pixelDensity(CFG.capture ? Math.max(1, density) * Math.max(1, CFG.superSample) : 1);
 }
 
 // --------------------- lettura dati ---------------------

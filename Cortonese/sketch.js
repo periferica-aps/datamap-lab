@@ -113,7 +113,7 @@ const CFG = {
   // moltiplicatore di supersampling: la pixelDensity reale =
   // densità del display × superSample. >1 = backing buffer più fitto del
   // display → testi ruotati e curve antialiased (più liscio, più costoso).
-  superSample: 2
+  superSample: 1
 };
 
 let table;
@@ -157,10 +157,8 @@ function setup(){
     if (EXPORT.out   != null) CFG.outDur   = EXPORT.out;
     if (EXPORT.gap   != null) CFG.gapDur   = EXPORT.gap;
   } else {
-    // supersampling: alza il backing buffer oltre la densità del display.
-    // Va impostato PRIMA di createCanvas così il buffer nasce già denso.
-    // Resta sganciato dalle dimensioni LOGICHE del canvas (export invariato).
-    pixelDensity(Math.max(1, displayDensity()) * CFG.superSample);
+    // Il canvas è già 1080×1920: densità 1 evita buffer GPU enormi nella landing.
+    pixelDensity(1);
   }
 
   createCanvas(OUT_W, OUT_H);

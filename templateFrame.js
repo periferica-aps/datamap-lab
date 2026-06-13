@@ -12,20 +12,14 @@ const FRAME_FOOTER_Y = 70;        // distanza del testo FOOTER dal bordo inferio
 const TOP_LEFT_TEXT = "PERIFERICA APS";
 const TOP_RIGHT_TEXT = "MINIMETRÒ PERUGIA";
 
-const BOTTOM_LEFT_TEXT = "SCOPRI IL PROGETTO DATAMAP";
+const BOTTOM_LEFT_TEXT = "MINIMETRÒ PERUGIA";
 const BOTTOM_RIGHT_TEXT = "TRACCIATI 2026";
 
 const FRAME_TEXT_COLOR = '#FFFFFF';
 const FRAME_FONT_SIZE = 25;
 const FRAME_LETTER_SPACING = 1.1;
 
-// ----- QR nel footer sinistro (generato da make_qr.py: nero su bianco) -----
-const FRAME_QR_SIZE = 60;   // lato del QR (px)
-const FRAME_QR_GAP  = 30;    // spazio fra QR e testo footer sinistro
-let qrImg;
-function loadFrameAssets() {  // da chiamare dentro preload() in sketch.js
-  qrImg = loadImage("qr.png");
-}
+function loadFrameAssets() {}
 
 function drawTemplateFrame() {
   push();
@@ -62,14 +56,11 @@ function drawTemplateFrame() {
   // così il margine sotto è simmetrico a quello sopra
   textAlign(LEFT, BOTTOM);
 
-  // footer sinistra: QR attaccato al margine + scritta allineata al fondo del QR
   const footerBaseY = height - FRAME_FOOTER_Y;
-  const qrTop = footerBaseY - FRAME_QR_SIZE;
-  if (qrImg) image(qrImg, FRAME_MARGIN_X, qrTop, FRAME_QR_SIZE, FRAME_QR_SIZE);
   fill(FRAME_TEXT_COLOR);
   drawTrackedText(
     BOTTOM_LEFT_TEXT,
-    FRAME_MARGIN_X + FRAME_QR_SIZE + FRAME_QR_GAP,
+    FRAME_MARGIN_X,
     footerBaseY,
     FRAME_LETTER_SPACING
   );

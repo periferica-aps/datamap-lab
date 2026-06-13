@@ -59,8 +59,8 @@ function preload() {
 }
 
 function setup() {
+  pixelDensity(1);
   createCanvas(windowWidth, windowHeight);
-  pixelDensity(min(2, window.devicePixelRatio || 1));
   textFont(sourceCodeProRegular);
   ROWH = (GRID_BOTTOM - GRID_TOP) / NROWS;
   FONT = ROWH * FONT_FRAC;

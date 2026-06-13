@@ -1164,6 +1164,7 @@ function preload() {
 }
 
 function setup() {
+  pixelDensity(1);
   createCanvas(OUT_W, OUT_H);
   fontSizeBase = W * 0.022 * TEXT_SIZE_FACTOR;
 

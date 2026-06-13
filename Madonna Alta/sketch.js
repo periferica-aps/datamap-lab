@@ -223,6 +223,7 @@ function preload() {
 
 /* ─────────────────────────────────────────────────── setup ── */
 function setup() {
+  pixelDensity(1);
   createCanvas(OUT_W, OUT_H);
   textFont(sourceCodeProRegular);
   // Forza il caricamento di entrambi i pesi prima di disegnare le barre,

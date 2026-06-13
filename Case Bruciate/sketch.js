@@ -105,8 +105,8 @@ function preload() {
 }
 
 function setup() {
+  pixelDensity(1);
   createCanvas(OUT_W, OUT_H);
-  pixelDensity(min(2, window.devicePixelRatio || 1));
   textAlign(CENTER, CENTER);
   textFont(sourceCodeProRegular);
   textStyle(NORMAL);

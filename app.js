@@ -1,4 +1,12 @@
-const observer = new IntersectionObserver((entries) => {
+function sendVisibility(shell, visible) {
+  shell.dataset.visible = String(visible);
+  shell.querySelector('iframe')?.contentWindow?.postMessage({
+    type: 'datamap-visibility',
+    visible
+  }, '*');
+}
+
+const loadObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {
     const shell = entry.target;
     const currentFrame = shell.querySelector('iframe');
@@ -10,10 +18,21 @@ const observer = new IntersectionObserver((entries) => {
     frame.title = shell.dataset.title;
     frame.loading = 'lazy';
     frame.allow = 'fullscreen';
-    frame.addEventListener('load', () => shell.querySelector('.loader')?.remove());
+    frame.addEventListener('load', () => {
+      shell.querySelector('.loader')?.remove();
+      sendVisibility(shell, shell.dataset.visible === 'true');
+    });
     shell.appendChild(frame);
-    observer.unobserve(shell);
+    loadObserver.unobserve(shell);
   });
 }, { rootMargin: '75% 0px' });
 
-document.querySelectorAll('.sketch-shell').forEach((shell) => observer.observe(shell));
+const activityObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => sendVisibility(entry.target, entry.isIntersecting));
+}, { threshold: 0.01 });
+
+document.querySelectorAll('.sketch-shell').forEach((shell) => {
+  shell.dataset.visible = 'false';
+  loadObserver.observe(shell);
+  activityObserver.observe(shell);
+});
