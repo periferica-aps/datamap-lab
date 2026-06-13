@@ -28,6 +28,8 @@ const TRACKING = 2;
 // ---- geometria (riferimento 9:16, poi scalata alla finestra) ----
 const REF_W = 540;
 const REF_H = 960;
+const OUT_W = 2160;
+const OUT_H = 3840;
 
 const GRID_LEFT = 30;
 const GRID_RIGHT = 510;
@@ -59,10 +61,10 @@ function preload() {
 }
 
 function setup() {
-  // La copertina usa windowWidth: sui display Retina serve un backing buffer
-  // più denso per non perdere nitidezza, soprattutto durante il pinch zoom.
-  pixelDensity(min(3, window.devicePixelRatio || 1));
-  createCanvas(windowWidth, windowHeight);
+  // Buffer fisso 4× rispetto alla geometria originale. Non dipende dal DPR
+  // riportato dal browser mobile e resta nitido anche durante il pinch zoom.
+  pixelDensity(1);
+  createCanvas(OUT_W, OUT_H);
   textFont(sourceCodeProRegular);
   ROWH = (GRID_BOTTOM - GRID_TOP) / NROWS;
   FONT = ROWH * FONT_FRAC;
@@ -71,10 +73,10 @@ function setup() {
 function draw() {
   background(0);
 
-  // palco 9:16 centrato nella finestra
-  const s = min(width / REF_W, height / REF_H);
-  const ox = (width - REF_W * s) / 2;
-  const oy = (height - REF_H * s) / 2;
+  // Il canvas e il palco hanno entrambi rapporto 9:16.
+  const s = OUT_W / REF_W;
+  const ox = 0;
+  const oy = 0;
   const T = millis() * 0.001;
 
   push();
@@ -176,8 +178,4 @@ function drawFooter() {
   textAlign(RIGHT, BASELINE);
   text(FOOT_R1, GRID_RIGHT, FOOT_Y);
   text(FOOT_R2, GRID_RIGHT, FOOT_Y + FOOT_LH);
-}
-
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
 }
