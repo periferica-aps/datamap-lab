@@ -355,6 +355,8 @@ function buildPhases() {
   // Keyframe iniziale: barre a zero, parole già pronte.
   // Evita il salto secco quando il ciclo riparte dalla prima ora.
   const firstPhase = PHASES[0];
+  const firstOccWords = firstAvailableWords('occasionali');
+  const firstAbiWords = firstAvailableWords('abituali');
   const zeroOccMeans = firstPhase.occasionali.means.map(v => v == null ? null : 0);
   const zeroAbiMeans = firstPhase.abituali.means.map(v => v == null ? null : 0);
   PHASES.unshift({
@@ -362,12 +364,12 @@ function buildPhases() {
     time: firstPhase.time,
     isIntro: true,
     occasionali: {
-      words: firstPhase.occasionali.words.slice(),
+      words: firstOccWords,
       means: zeroOccMeans,
       n: 0
     },
     abituali: {
-      words: firstPhase.abituali.words.slice(),
+      words: firstAbiWords,
       means: zeroAbiMeans,
       n: 0
     }
@@ -384,6 +386,14 @@ function buildPhases() {
     occasionali: packGroup(tot.occasionali),
     abituali:    packGroup(tot.abituali)
   });
+}
+
+function firstAvailableWords(group) {
+  for (const phase of PHASES) {
+    const words = validWordItems(phase[group].words);
+    if (words.length) return words.slice();
+  }
+  return [{ w: '—', s: null }];
 }
 
 function packGroup(g) {
