@@ -62,7 +62,7 @@ const FONT = 'Source Code Pro';
 const W = 720, H = 1280;
 // Risoluzione del canvas di uscita (lo sketch viene poi inserito nel frame).
 const OUT_W = 1080, OUT_H = 1920;
-const FPS   = 25;
+const FPS   = 30;
 
 // ----- parametri animazione (toccare qui per tarare) -----
 const START_HOLD_MS = 2000;  // pausa iniziale prima che partano le linee
@@ -784,7 +784,7 @@ function drawCornerBox(rows, anchorRight){
       rect(tx, cyRow - BOX_MARK / 2, BOX_MARK, BOX_MARK);
       tx += BOX_MARK + BOX_MARK_GAP;
     }
-    fill(FRAME_TEXT_COLOR);
+    fill('#FFFFFF');
     text(r.label, tx, cyRow);
   }
   pop();
