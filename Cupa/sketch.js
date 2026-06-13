@@ -23,7 +23,7 @@
 /* ---- editable ---- */
 const NUM_FLOWERS = 5;                              // numero minimo di soffioni
 const MIN_FORMING_FLOWERS = 4.0;                      // almeno questi soffioni nella fase di formazione
-const CSV_FILE = "../dati.csv";
+const CSV_FILE = "dati_subset.csv";
 const FONT_FAMILY = "Source Code Pro";
 const TEXT_SIZE_FACTOR = 1.5;                       // 1.0 = default, aumenta/diminuisci la dimensione del testo
 const HEIGHT_SCALE_FACTOR = 1.2;                     // 1.0 = default, aumenta/diminuisci l'altezza dei fiori
