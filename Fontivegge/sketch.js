@@ -125,8 +125,11 @@ let LOOP_FRAMES = 240;
 let NTOK = 5;
 let cnv, capturer, capturing = false;
 let paused = false;
+let sourceCodeProRegular, sourceCodeProBold;
 
 function preload(){
+  sourceCodeProRegular = loadFont('../fonts/SourceCodePro-Regular.ttf');
+  sourceCodeProBold = loadFont('../fonts/SourceCodePro-Bold.ttf');
   table = loadTable(DATA_SOURCE, "csv", "header");
   loadFrameAssets();
 }
@@ -135,7 +138,7 @@ function setup(){
   computeVerticalLayout();
   cnv = createCanvas(OUT_W, OUT_H);
   applyCanvasPixelDensity();
-  textFont('Source Code Pro');
+  textFont(sourceCodeProRegular);
   frameRate(CFG.fps);
   randomSeed(7);
 
@@ -501,7 +504,7 @@ function formatDayLabel(value){
 function drawFlow(strands, timeline, segment){
   if (timeline.phase === "reset") return;
   noStroke();
-  textFont("Source Code Pro");
+  textFont(sourceCodeProRegular);
   textAlign(CENTER, CENTER);
   textStyle(NORMAL);
   textSize(CFG.fontSize);
@@ -604,7 +607,7 @@ function drawSemiboldPercent(label, x, y, size){
 
 // ------------------------------- nodi --------------------------------
 function drawNodesA(counts){
-  textFont("Source Code Pro");
+  textFont(sourceCodeProRegular);
   noStroke();
   const total = counts.total;
   const ps = CFG.pctSizeA;
@@ -644,7 +647,7 @@ function drawUsageUnderline(cx, y, level, col){
 }
 
 function drawNodesB(counts){
-  textFont("Source Code Pro");
+  textFont(sourceCodeProRegular);
   noStroke();
   const total = counts.total;
   const ps = CFG.pctSizeB;
@@ -656,10 +659,12 @@ function drawNodesB(counts){
     drawSemiboldPercent(`${pct}%`, p.x, p.y, ps);
 
     textAlign(CENTER, TOP);
-    textStyle(BOLD);
+    textFont(sourceCodeProBold);
+    textStyle(NORMAL);
     textSize(12);
     text(c, p.x, p.y + ps * 0.55 + 8);
 
+    textFont(sourceCodeProRegular);
     textStyle(NORMAL);
     textSize(9.5);
     fill(255);
@@ -669,7 +674,7 @@ function drawNodesB(counts){
 }
 
 function drawNodesC(counts){
-  textFont("Source Code Pro");
+  textFont(sourceCodeProRegular);
   noStroke();
   const total = counts.total;
   const ps = CFG.pctSizeC;
@@ -751,7 +756,7 @@ function drawLegend(timeline, visN){
   fill(CFG.bg);
   rect(box.x, box.y, box.w, box.h);
 
-  textFont("Source Code Pro");
+  textFont(sourceCodeProRegular);
   textStyle(NORMAL);
   textSize(14);
   textAlign(LEFT, TOP);

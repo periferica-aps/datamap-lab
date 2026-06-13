@@ -17,9 +17,7 @@
    Due "mood" di fiori: azzurro+pendente, caldo+dritto.
    Vento variabile (Perlin) = caos controllato e reattivo.
 
-   Per il p5 web editor, in index.html dentro <head>:
-     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet">
-   Oppure usa 'monospace' come FONT_FAMILY.
+   Source Code Pro viene caricato localmente dalla repository.
    ============================================================================ */
 
 /* ---- editable ---- */
@@ -1132,7 +1130,7 @@ function drawLegend() {
   const happyMood = MOODS.find(m => m.id === 'warm') || MOODS[1];
 
   push();
-  textFont(FONT_FAMILY);
+  textFont(sourceCodeProRegular);
   textAlign(LEFT, TOP);
   textSize(fs);
   noStroke();
@@ -1156,7 +1154,11 @@ function drawLegend() {
   pop();
 }
 
+let sourceCodeProRegular, sourceCodeProBold;
+
 function preload() {
+  sourceCodeProRegular = loadFont("../fonts/SourceCodePro-Regular.ttf");
+  sourceCodeProBold = loadFont("../fonts/SourceCodePro-Bold.ttf");
   responsesTable = loadTable(CSV_FILE, "csv", "header");
   loadFrameAssets();
 }
@@ -1174,7 +1176,7 @@ function setup() {
   document.body.style.overflow   = 'hidden';
 
   textAlign(CENTER, CENTER);
-  textFont(FONT_FAMILY);
+  textFont(sourceCodeProRegular);
   noStroke();
   noiseDetail(2, 0.5);
 

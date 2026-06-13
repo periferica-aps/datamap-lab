@@ -50,15 +50,18 @@ const QR_GAP = 14;           // spazio tra QR e testo del footer
 // ------------------------------------------------------
 
 let ROWH, FONT, CHADV, QR;
+let sourceCodeProRegular, sourceCodeProBold;
 
 function preload() {
+  sourceCodeProRegular = loadFont("../fonts/SourceCodePro-Regular.ttf");
+  sourceCodeProBold = loadFont("../fonts/SourceCodePro-Bold.ttf");
   QR = loadImage("qr.png");
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   pixelDensity(min(2, window.devicePixelRatio || 1));
-  textFont("Source Code Pro")
+  textFont(sourceCodeProRegular);
   ROWH = (GRID_BOTTOM - GRID_TOP) / NROWS;
   FONT = ROWH * FONT_FRAC;
 }

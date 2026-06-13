@@ -136,8 +136,11 @@ let startMs;
 let prevLoopElapsed = 0;
 let currentAgg;            // aggregato cumulativo corrente
 let lastIncludedIdx = -1;  // ultimo indice di riga incluso
+let sourceCodeProRegular, sourceCodeProBold;
 
 function preload(){
+  sourceCodeProRegular = loadFont('../fonts/SourceCodePro-Regular.ttf');
+  sourceCodeProBold = loadFont('../fonts/SourceCodePro-Bold.ttf');
   table = loadTable('../dati.csv','csv','header',
     () => { loaded = true; },
     () => { dataError = 'dati.csv non trovato'; }
@@ -152,12 +155,7 @@ function setup(){
   pixelDensity(1);
   frameRate(FPS);
 
-  // Source Code Pro da Google Fonts
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = 'https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;700&display=swap';
-  document.head.appendChild(link);
-  textFont(FONT);
+  textFont(sourceCodeProRegular);
 
   cx = W/2;
   // Il bordo alto della pista resta ancorato a TRACK_TOP: riducendo
@@ -418,7 +416,7 @@ function drawDottedOval(r, skip){
 // Arco (in unità di s, alla radius del titolo) occupato dal titolo i.
 function titleArcSpan(i){
   push();
-  textFont(FONT); textSize(TITLE_FONT); textStyle(BOLD);
+  textFont(sourceCodeProBold); textSize(TITLE_FONT); textStyle(NORMAL);
   const str = LANES[i].title.toUpperCase();
   let arc = 0;
   for(let k = 0; k < str.length; k++) arc += max(textWidth(str[k]), 3) + 0.4;
@@ -437,7 +435,7 @@ function titleSkipForBoundary(level){
 function drawHeader(){
   push();
   noStroke();
-  textFont(FONT);
+  textFont(sourceCodeProRegular);
 
   const rTop = boundaryR(0);
   fill('#FFFFFF');
@@ -451,7 +449,7 @@ function drawHeader(){
 // ----- titoli sopra ogni coppia di corsie -----
 function drawTitles(){
   push();
-  textFont(FONT);
+  textFont(sourceCodeProRegular);
   fill('#FFFFFF');
   noStroke();
   for(let i = 0; i < LANES.length; i++){
@@ -522,8 +520,9 @@ function drawLane(L, i, t, retractT, isHolding, isRetracting){
 
 // ----- testo statico (una sola passata) lungo la curva: per i titoli -----
 function layStaticText(r, sStart, str, fontSize){
+  textFont(sourceCodeProBold);
   textSize(fontSize);
-  textStyle(BOLD);
+  textStyle(NORMAL);
   textAlign(CENTER, CENTER);
   let s = sStart;
   for(let idx = 0; idx < str.length; idx++){
@@ -545,7 +544,7 @@ function layStaticText(r, sStart, str, fontSize){
 function laySolidLoopedText(r, sStart, sEnd, str, baseCol, fontSize){
   if(!str || sEnd <= sStart) return;
   push();
-  textFont(FONT);
+  textFont(sourceCodeProRegular);
   textSize(fontSize);
   textStyle(NORMAL);
   noStroke();
@@ -578,9 +577,9 @@ function laySolidLoopedText(r, sStart, sEnd, str, baseCol, fontSize){
 function laySolidTextRun(r, sStart, str, baseCol, fontSize, bold){
   if(!str) return;
   push();
-  textFont(FONT);
+  textFont(bold ? sourceCodeProBold : sourceCodeProRegular);
   textSize(fontSize);
-  textStyle(bold ? BOLD : NORMAL);
+  textStyle(NORMAL);
   noStroke();
   textAlign(CENTER, CENTER);
   fill(baseCol);
@@ -607,7 +606,7 @@ function laySolidLoopedTextBoldTail(r, sStart, sEnd, word, baseCol, fontSize){
   if(!word || sEnd <= sStart) return;
   // arco occupato dalla parola in grassetto
   push();
-  textFont(FONT); textSize(fontSize); textStyle(BOLD);
+  textFont(sourceCodeProBold); textSize(fontSize); textStyle(NORMAL);
   let wordArc = 0;
   for(let i = 0; i < word.length; i++) wordArc += max(textWidth(word[i]), 3) + 0.4;
   pop();
@@ -627,7 +626,7 @@ function laySolidLoopedTextBoldTail(r, sStart, sEnd, word, baseCol, fontSize){
 function layDroppingLoopedText(r, sStart, sEnd, str, baseCol, fontSize){
   if(!str || sEnd <= sStart) return;
   push();
-  textFont(FONT);
+  textFont(sourceCodeProRegular);
   textSize(fontSize);
   textStyle(NORMAL);
   noStroke();
@@ -684,9 +683,9 @@ function drawHeadMarker(r, pos, col, type){
     rectMode(CENTER);
     rect(0, 0, HEAD_MARKER_SIZE * 0.85, HEAD_MARKER_SIZE * 1.3);
   }else{
-    textFont(FONT);
+    textFont(sourceCodeProBold);
     textSize(HEAD_MARKER_SIZE + 4);
-    textStyle(BOLD);
+    textStyle(NORMAL);
     textAlign(CENTER, CENTER);
     text(sym, 0, 0);
     textStyle(NORMAL);
@@ -697,9 +696,9 @@ function drawHeadMarker(r, pos, col, type){
 // ----- etichetta valore subito dopo la testa, sulla tangente -----
 function drawHeadLabel(r, pos, label, col){
   push();
-  textFont(FONT);
+  textFont(sourceCodeProBold);
   textSize(LABEL_FONT);
-  textStyle(BOLD);
+  textStyle(NORMAL);
   textAlign(LEFT, CENTER);
   noStroke();
   fill(col);
@@ -751,7 +750,7 @@ function drawLegend(){
 // ----- riquadro bordato in un angolo basso; righe con marker opzionale -----
 function drawCornerBox(rows, anchorRight){
   push();
-  textFont(FONT);
+  textFont(sourceCodeProRegular);
   textSize(BOX_FONT);
   textStyle(NORMAL);
   let maxW = 0;

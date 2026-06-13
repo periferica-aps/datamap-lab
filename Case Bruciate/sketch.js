@@ -95,8 +95,11 @@ const EMOTIONS = [
 
 let table;
 let rings = [];
+let sourceCodeProRegular, sourceCodeProBold;
 
 function preload() {
+  sourceCodeProRegular = loadFont("../fonts/SourceCodePro-Regular.ttf");
+  sourceCodeProBold = loadFont("../fonts/SourceCodePro-Bold.ttf");
   loadFrameAssets();
   table = loadTable("../dati.csv", "csv", "header");
 }
@@ -105,7 +108,7 @@ function setup() {
   createCanvas(OUT_W, OUT_H);
   pixelDensity(min(2, window.devicePixelRatio || 1));
   textAlign(CENTER, CENTER);
-  textFont("Source Code Pro");
+  textFont(sourceCodeProRegular);
   textStyle(NORMAL);
   noStroke();
   colorMode(HSB, 360, 100, 100, 100);

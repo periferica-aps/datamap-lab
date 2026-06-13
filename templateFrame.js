@@ -33,7 +33,11 @@ function drawTemplateFrame() {
   noStroke();
   fill(FRAME_TEXT_COLOR);
 
-  textFont("Source Code Pro");
+  if (typeof sourceCodeProRegular !== "undefined" && sourceCodeProRegular) {
+    textFont(sourceCodeProRegular);
+  } else {
+    textFont("Source Code Pro");
+  }
   textSize(FRAME_FONT_SIZE);
   textStyle(NORMAL);
   textLeading(FRAME_FONT_SIZE);

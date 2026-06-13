@@ -131,12 +131,15 @@ let layoutKey = '';
 let tStart = 0;
 let paused = false, pausedAt = 0;
 let speedMul = 1;
+let sourceCodeProRegular, sourceCodeProBold;
 
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 
 /* ---------- preload / setup ---------- */
 
 function preload(){
+  sourceCodeProRegular = loadFont('../fonts/SourceCodePro-Regular.ttf');
+  sourceCodeProBold = loadFont('../fonts/SourceCodePro-Bold.ttf');
   loadFrameAssets();
   table = loadTable(CSV_NAME, 'csv', 'header',
     () => { parseData(); dataReady = true; },
@@ -161,7 +164,7 @@ function setup(){
   }
 
   createCanvas(OUT_W, OUT_H);
-  textFont(CFG.fontFamily);
+  textFont(sourceCodeProRegular);
   frameRate(60);
   tStart = millis();
   if (dataReady) buildLayout();
@@ -530,7 +533,7 @@ function drawAxesLabels(){
   fill('#FFFFFF');
   const ts = Math.round(W * 0.019);
   textSize(ts);
-  drawingContext.font = '400 ' + ts + 'px ' + CFG.fontFamily;
+  drawingContext.font = '400 ' + ts + 'px "' + CFG.fontFamily + '"';
   textLeading(ts * 1.18);
 
   // asse orizzontale — allineato al margine della cornice (x=0 a sx, x=W a dx,
@@ -660,7 +663,7 @@ function drawCellRings(cell, nRevealed, revealedFloat, tSec){
   noStroke();
   textAlign(CENTER, CENTER);
   textSize(wordSize);                 // dimensione SEMPRE costante
-  drawingContext.font = CFG.wordWeight + ' ' + wordSize + 'px ' + CFG.fontFamily;
+  drawingContext.font = CFG.wordWeight + ' ' + wordSize + 'px "' + CFG.fontFamily + '"';
 
   // ordine per comparsa: le parole nuove si accodano, mai inserite in mezzo →
   // le posizioni già disposte non saltano quando ne arriva una nuova
@@ -727,7 +730,7 @@ function drawLegend(){
   const fs = Math.round(W * 0.019); // un'unica dimensione testo
   const lh = fs * 1.5;              // interlinea
   textSize(fs);
-  drawingContext.font = '400 ' + fs + 'px ' + CFG.fontFamily;
+  drawingContext.font = '400 ' + fs + 'px "' + CFG.fontFamily + '"';
   fill(grey);
 
   // Ancoraggio al fondo della GRIGLIA: se aumenti CFG.grid.bottom la legenda

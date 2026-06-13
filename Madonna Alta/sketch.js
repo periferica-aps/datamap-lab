@@ -207,9 +207,12 @@ let paused   = false;
 let pausedAt = 0;
 let speedMul = 1;
 let currentTextSize = 16;
+let sourceCodeProRegular, sourceCodeProBold;
 
 /* ─────────────────────────────────────────────────── preload ── */
 function preload() {
+  sourceCodeProRegular = loadFont('../fonts/SourceCodePro-Regular.ttf');
+  sourceCodeProBold = loadFont('../fonts/SourceCodePro-Bold.ttf');
   loadFrameAssets();
   table = loadTable(
     CSV_NAME, 'csv', 'header',
@@ -221,7 +224,7 @@ function preload() {
 /* ─────────────────────────────────────────────────── setup ── */
 function setup() {
   createCanvas(OUT_W, OUT_H);
-  textFont('Source Code Pro');
+  textFont(sourceCodeProRegular);
   // Forza il caricamento di entrambi i pesi prima di disegnare le barre,
   // così il canvas non parte col font di fallback (monospace di sistema).
   if (document.fonts && document.fonts.load) {
