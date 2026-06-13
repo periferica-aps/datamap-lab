@@ -28,8 +28,8 @@ const TRACKING = 2;
 // ---- geometria (riferimento 9:16, poi scalata alla finestra) ----
 const REF_W = 540;
 const REF_H = 960;
-const OUT_W = 2160;
-const OUT_H = 3840;
+const OUT_W = 1080;
+const OUT_H = 1920;
 
 const GRID_LEFT = 30;
 const GRID_RIGHT = 510;
@@ -61,8 +61,7 @@ function preload() {
 }
 
 function setup() {
-  // Buffer fisso 4× rispetto alla geometria originale. Non dipende dal DPR
-  // riportato dal browser mobile e resta nitido anche durante il pinch zoom.
+  // Come gli altri sketch: canvas nativo 1080×1920, adattato soltanto dal CSS.
   pixelDensity(1);
   createCanvas(OUT_W, OUT_H);
   textFont(sourceCodeProRegular);
