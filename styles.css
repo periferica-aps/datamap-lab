@@ -24,15 +24,13 @@ body {
   z-index: 20;
   right: 20px;
   bottom: 20px;
-  padding: 11px 14px;
+  padding: 7px 9px;
   border: 1px solid #fff;
-  color: #fff;
-  background: rgba(0, 0, 0, .82);
-  font: 600 11px/1 "Source Code Pro", monospace;
+  color: #000;
+  background: #fff;
+  font: 600 9px/1 "Source Code Pro", monospace;
   letter-spacing: .06em;
   text-decoration: none;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
 
 .pdf-download:focus-visible {
@@ -43,7 +41,7 @@ body {
 @media (hover: hover) {
   .pdf-download:hover {
     color: #000;
-    background: #fff;
+    background: #ddd;
   }
 }
 
@@ -111,7 +109,7 @@ body {
   .pdf-download {
     right: 12px;
     bottom: 12px;
-    padding: 10px 12px;
-    font-size: 10px;
+    padding: 7px 9px;
+    font-size: 9px;
   }
 }
