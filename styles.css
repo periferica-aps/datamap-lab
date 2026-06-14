@@ -19,11 +19,20 @@ body {
   overflow-x: hidden;
 }
 
-.pdf-download {
+.page-actions {
   position: fixed;
   z-index: 20;
   right: 20px;
   bottom: 20px;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.page-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 7px 9px;
   border: 1px solid #fff;
   color: #000;
@@ -33,13 +42,31 @@ body {
   text-decoration: none;
 }
 
-.pdf-download:focus-visible {
+.instagram-link {
+  width: 29px;
+  padding: 5px;
+}
+
+.instagram-link svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.instagram-link .instagram-dot {
+  fill: currentColor;
+  stroke: none;
+}
+
+.page-action:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 3px;
 }
 
 @media (hover: hover) {
-  .pdf-download:hover {
+  .page-action:hover {
     color: #000;
     background: #ddd;
   }
@@ -106,10 +133,17 @@ body {
 }
 
 @media (max-width: 520px) {
-  .pdf-download {
+  .page-actions {
     right: 12px;
     bottom: 12px;
+  }
+
+  .page-action {
     padding: 7px 9px;
     font-size: 9px;
+  }
+
+  .instagram-link {
+    padding: 5px;
   }
 }
