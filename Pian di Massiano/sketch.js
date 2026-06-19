@@ -1,17 +1,56 @@
 // ============================================================
-//  TRACK CHART · v6 — 9:16 verticale
+//  PIAN DI MASSIANO — "TRACK CHART"
 //  "Due modi di attraversare lo stesso spazio"
+//  Progetto Tracciati 2026 · DATA MAP LAB · Periferica APS
+//  Stazione Minimetrò di Perugia · formato verticale 9:16
 //
-//  Ogni testa percorre 10 giri più il tratto finale corrispondente
-//  al risultato del gruppo: MEDIA 1-5 per le likert, QUOTA della
-//  risposta dominante per le categoriali. Le categoriali mostrano le
-//  singole risposte mentre entrano in scena; solo alla fine si
-//  consolidano nella risposta dominante.
+//  Autori:
+//    Giacomo Lazzerini
+//    Matteo Bartoccetti  (studente)
+//    Veronica Lucconi    (studentessa)
+//    Sofia Furia         (studentessa)
 //
-//  La corsa si ferma quando tutte le risposte sono state incluse.
+//  ------------------------------------------------------------
+//  COSA FA L'ANIMAZIONE
+//  ------------------------------------------------------------
+//  Una pista da corsa con SEI CORSIE concentriche (LANES), una per
+//  ogni domanda del questionario:
+//    • le 3 esterne (categoriali): MEZZO ALTERNATIVO al Minimetrò,
+//      MOTIVO del viaggio, CON CHI si viaggia
+//    • le 3 interne (likert 1..5): senso di SICUREZZA, senso di
+//      APPARTENENZA, voglia di INTERAGIRE con gli altri
+//  Su ogni corsia corrono DUE "teste", una per categoria di utente:
+//  STUDENTI (verde) e LAVORATORI (viola). La DISTANZA tra le due teste
+//  rende visibile la differenza di risposta tra i due gruppi.
+//
+//  Ogni testa percorre un numero fisso di giri (RACE_LAPS) più un tratto
+//  finale proporzionale al risultato del gruppo:
+//    • likert  -> MEDIA 1..5 della risposta
+//    • categoriali -> QUOTA della risposta dominante (mostra le singole
+//      risposte mentre entrano, poi si consolida nella dominante in grassetto)
+//  La VELOCITÀ con cui le frasi avanzano segue la variazione dei punteggi
+//  medi raccolti giorno dopo giorno; un riquadro mostra GIORNO e RISPOSTE
+//  incluse, cioè l'evoluzione delle differenze tra i due gruppi nel tempo.
+//
+//  La corsa si ferma quando tutte le risposte sono incluse, tiene
+//  l'immagine finale, poi si ritrae verso lo START e riparte (loop).
 //  Le code scompaiono togliendo lettere, senza opacità né gradienti.
 //
-//  Controlli:  SPAZIO / click = riavvia · F = salta alla fine
+//  ------------------------------------------------------------
+//  COME È FATTO (per chi vuole riutilizzarlo)
+//  ------------------------------------------------------------
+//  • Dati letti da ../dati.csv (buildData): si tiene solo chi è studente
+//    o lavoratore (groupOf), si ordina per data e si pre-calcola l'aggregato
+//    finale; durante la corsa l'aggregato cresce in modo cumulativo nel
+//    tempo virtuale (le righe entrano quando il loro timestamp è "passato").
+//  • La geometria della pista (rette + semicerchi) è parametrica: posCW(r,s)
+//    dà il punto a distanza s lungo la corsia di raggio r, tangent() l'angolo.
+//    Le lettere sono disposte lungo la corsia per lunghezza d'arco.
+//  • La timeline (in draw) ha le fasi: start-hold → race → hold → retract.
+//  • Tutto è disegnato in spazio nativo W×H e scalato dentro la cornice
+//    condivisa (drawSketchScaled + templateFrame.js).
+//
+//  Controlli (solo anteprima):  SPAZIO / click = riavvia · F = salta alla fine
 // ============================================================
 
 // ----- colonne del CSV -----
@@ -43,6 +82,8 @@ function shortLabel(key, raw){
   if(M[key] && M[key][v]) return M[key][v];
   return v.toUpperCase().split(/[\s/]+/)[0];
 }
+// Occupazione dichiarata -> categoria di utente: 'stu' (studenti) o 'lav'
+// (lavoratori, inclusi gli studenti-lavoratori). Altri valori -> null = scartato.
 function groupOf(raw){
   if(raw==null) return null;
   const v = raw.trim();
@@ -187,6 +228,10 @@ function boundaryR(level){
   if(level === LANES.length)   return innerR - 4;                  // bordo interno
   return (laneR(level-1, 'lav') + titleR(level)) / 2;
 }
+// Geometria della pista (due rette verticali + due semicerchi):
+//   halfFor/perimFor = mezzo perimetro / perimetro a raggio r
+//   posSide/posCW    = punto {x,y} a distanza d'arco s lungo la corsia (orario)
+//   tangent          = angolo della corsia in s (per orientare le lettere)
 function halfFor(r){ return PI*r + straightLen; }
 function perimFor(r){ return 2*halfFor(r); }
 function posSide(side, r, s){
@@ -285,6 +330,9 @@ function topCat(a, k){
   return { label: best, share: tot ? bc/tot : 0 };
 }
 function meanLik(a, k){ return a.ns[k] ? a.sums[k]/a.ns[k] : 0; }
+// Metrica normalizzata 0..1 di una corsia per un gruppo: quota della categoria
+// dominante (domande 'cat') o media likert/5 (domande 'lik'). È la frazione di
+// giro extra che la testa percorre dopo i RACE_LAPS giri fissi.
 function metricFor(L, g, agg){
   if(agg[g].n === 0) return 0;
   return L.type === 'cat'

@@ -1,17 +1,59 @@
 // =====================================================================
-//  IL VIAGGIO IN MINIMETRÒ — Albero di flussi
-//  RADICI (A, basso)  = partenze
-//  TRONCO (B, centro) = lunghezza viaggio
-//  CHIOMA (C, alto)   = arrivi (in linea, NON ad arco)
+//  FONTIVEGGE — "IL VIAGGIO IN MINIMETRÒ" (albero di flussi)
+//  Progetto Tracciati 2026 · DATA MAP LAB · Periferica APS
+//  Stazione Minimetrò di Perugia · formato verticale 9:16
 //
-//  Layout simmetrico sull'asse centrale.
-//  Percentuali a DIMENSIONE FISSA, ben leggibili.
-//  Rivelazione cronologica progressiva: man mano che passa il tempo
-//  vengono "consumate" le risposte in ordine di compilazione e le %
-//  si aggiornano di conseguenza (i flussi spaziali non sono cronologici).
-//  Legenda fissa a sinistra, con zona di rispetto per le parole animate.
+//  Autori:
+//    Giacomo Lazzerini
+//    Fabjona Ndreca        (studentessa)
+//    Federica Smarrocchio  (studentessa)
 //
-//  Dati: dati.csv — by Giacomo Lazzerini
+//  ------------------------------------------------------------------
+//  COSA FA L'ANIMAZIONE
+//  ------------------------------------------------------------------
+//  Il tragitto dei passeggeri è tradotto in una forma ad ALBERO, su
+//  tre righe orizzontali collegate da flussi di parole curvi:
+//    • RADICI (A, in basso) = STAZIONE DI PARTENZA
+//    • TRONCO (B, al centro) = LUNGHEZZA DEL VIAGGIO (BREVI/MEDI/LUNGHI,
+//      cioè il numero di fermate percorse)
+//    • CHIOMA (C, in alto)  = STAZIONE DI ARRIVO
+//  Ogni risposta è un "filo" che sale dalla sua stazione di partenza,
+//  attraversa la categoria di durata e arriva alla stazione di arrivo,
+//  collegando graficamente le fermate della linea (da Pian di Massiano
+//  a Pincetto).
+//
+//  Le PAROLE che compongono i fili sono quelle lasciate nel questionario:
+//    • nel tratto BASSO (radici→tronco) scorrono le parole che il
+//      passeggero vorrebbe LASCIARE agli altri (colore = partenza)
+//    • nel tratto ALTO (tronco→chioma) quelle che vorrebbe RICEVERE
+//      (colore = arrivo)
+//  Sotto ogni nome di stazione, dei segni codificano:
+//    • alle RADICI: quanto sono ABITUDINARI i passeggeri partiti da lì
+//      (frequenza d'uso, trattini)
+//    • sulla CHIOMA: il livello medio di CONTENTEZZA all'arrivo (puntini)
+//  Le percentuali (a dimensione fissa) indicano la quota di risposte per
+//  ogni stazione/categoria.
+//
+//  RIVELAZIONE CRONOLOGICA: col passare del tempo le risposte vengono
+//  "consumate" in ordine di compilazione e le % si aggiornano; i flussi
+//  nello spazio NON sono cronologici (sono mappe fisse), ma il loro
+//  riempimento sì.
+//
+//  ------------------------------------------------------------------
+//  COME È FATTO (per chi vuole riutilizzarlo)
+//  ------------------------------------------------------------------
+//  • Dati letti da ../dati.csv (prepareData): partenza, arrivo, durata
+//    ricalcolata (computeTripCategory), parole, frequenza, contentezza,
+//    data; risposte ordinate cronologicamente.
+//  • Layout simmetrico sull'asse centrale, costruito in spazio nativo
+//    BASE_W×BASE_H e scalato nella cornice (drawSketchScaled).
+//  • Ogni risposta diventa due "strand": A→B e B→C (buildStrands), curve
+//    di Bézier su cui le parole scorrono per lunghezza d'arco.
+//  • La TIMELINE (getTimeline) ha 4 fasi: delay → reveal (accumulo) →
+//    settle (fronte di svuotamento dal basso) → reset, per un loop
+//    seamless esportabile.
+//  • Nessuna trasparenza: le lettere si rivelano carattere per carattere
+//    lungo un inviluppo, non in dissolvenza.
 // =====================================================================
 
 let table;
@@ -200,6 +242,9 @@ function parseScaleValue(value){
   return Number.isFinite(n) ? Math.max(1, Math.min(5, n)) : null;
 }
 
+// Categoria di durata dal numero di fermate tra partenza e arrivo
+// (distanza degli indici nell'ORDER della linea): 1–2 BREVI, 3–4 MEDI,
+// 5–6 LUNGHI. Stessa stazione o fuori scala -> null (risposta scartata).
 function computeTripCategory(dep, arr){
   const stops = Math.abs(ORDER.indexOf(dep) - ORDER.indexOf(arr));
   if (stops >= 1 && stops <= 2) return "BREVI";
@@ -347,6 +392,10 @@ function getCycleSeconds(){
     CFG.reveal.resetSeconds;
 }
 
+// Stato della timeline al tempo corrente, avvolto su un ciclo intero.
+// Fasi: "delay" (pausa iniziale) → "reveal" (le risposte si accumulano,
+// progress 0→1) → "settle" (un fronte risale dal basso e svuota i flussi) →
+// "reset" (le percentuali e i contatori tornano a zero per ripartire).
 function getTimeline(){
   const cycleSeconds = getCycleSeconds();
   const t = getElapsedSeconds() % cycleSeconds;

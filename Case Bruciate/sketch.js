@@ -1,20 +1,69 @@
 // ============================================================
-// 12 EMOZIONI IN TRANSITO — formato verticale 9:16
-// "C'è una parola che si avvicina a quello che senti?"
+// CASE BRUCIATE — "EMOZIONI PERCEPITE IN VIAGGIO"
+// Progetto Tracciati 2026 · DATA MAP LAB · Periferica APS
+// Stazione Minimetrò di Perugia · formato verticale 9:16
 //
-// Ogni emozione è un RETTANGOLO ARROTONDATO concentrico. La parola
-// scorre lungo il suo perimetro. Codifica:
-//   • LUNGHEZZA del tracciato  -> quante persone hanno scelto la parola
-//       (QUESTIONS_PER_SEMICIRCLE risposte = mezzo perimetro)
-//   • RESPIRO (apre/chiude fino al perimetro intero e torna)
-//       -> "livello di energia" medio
-//   • ROTAZIONE lungo il tracciato -> "quanto veloce va questo viaggio"
-//   • COLORE chiaro -> scuro -> "quanto ti senti in controllo"
+// Autori:
+//   Giacomo Lazzerini
+//   Noemi Filippini   (studentessa)
+//   Pamela Spadoni    (studentessa)
 //
-// A riposo le parole stanno quasi ferme e leggibili; solo quando il
-// tracciato si estende le lettere si allungano e scorrono.
+// ------------------------------------------------------------
+// COSA FA L'ANIMAZIONE
+// ------------------------------------------------------------
+// La visualizzazione è composta da 12 ANELLI concentrici, uno per
+// ciascuna emozione che i passeggeri potevano scegliere nel
+// questionario alla domanda "C'è una parola che si avvicina a quello
+// che senti?". Ogni anello NON è un cerchio ma un RETTANGOLO
+// ARROTONDATO (vedi rectPerimeter): le parole non stanno dentro la
+// forma, ma corrono LUNGO il suo perimetro, lettera per lettera,
+// come un testo che insegue il bordo.
 //
-// Dati letti e aggregati a runtime da dati.csv.
+// L'emozione più rara sta al centro, la più diffusa all'esterno
+// (gli anelli sono ordinati per frequenza in buildRings). Ogni
+// risposta del questionario diventa un PARAMETRO DINAMICO che cambia
+// il comportamento di un anello. Le quattro codifiche sono:
+//
+//   1) LUNGHEZZA del tracciato di testo
+//        -> QUANTE persone hanno scelto quella parola.
+//        Più passeggeri condividono l'emozione, più lungo è il
+//        nastro di parole ripetute lungo il perimetro
+//        (QUESTIONS_PER_SEMICIRCLE risposte = mezzo perimetro).
+//
+//   2) ROTAZIONE lungo il tracciato
+//        -> VELOCITÀ PERCEPITA del viaggio ("quanto veloce va questo
+//        viaggio"). Chi ha sentito il viaggio veloce fa scorrere
+//        l'anello più in fretta lungo il bordo.
+//
+//   3) RESPIRO (le lettere si distanziano e si riavvicinano)
+//        -> LIVELLO DI ENERGIA medio. A riposo le parole sono fitte e
+//        leggibili; nel "respiro" il tracciato si apre fino al
+//        perimetro intero e le lettere si allargano, poi torna.
+//        Più alta l'energia, più rapido il ciclo di apertura/chiusura.
+//
+//   4) COLORE (gradiente scuro -> chiaro)
+//        -> SENSO DI CONTROLLO. Più il passeggero si sente in
+//        controllo, più l'anello tende verso il colore chiaro.
+//
+// A riposo le parole stanno quasi ferme e leggibili: solo durante il
+// respiro il tracciato si estende e le lettere scorrono e si allungano.
+//
+// ------------------------------------------------------------
+// COME È FATTO (per chi vuole riutilizzarlo)
+// ------------------------------------------------------------
+// • I dati grezzi sono letti da ../dati.csv e AGGREGATI a runtime in
+//   aggregate(): per ogni emozione si contano le risposte e si fanno
+//   le medie di energia / velocità / controllo. Nessun dato è scritto
+//   a mano: cambiando il CSV cambia l'immagine.
+// • Tutta la geometria è costruita in uno spazio "nativo" 540×960
+//   (REF_W × REF_H) e poi scalata dentro una cornice 1080×1920
+//   (drawSketchScaled): si ragiona sempre nelle coordinate native.
+// • L'animazione è un LOOP PERFETTO di LOOP_SECONDS: a fine ciclo lo
+//   stato torna identico all'inizio, senza salti, così il video si può
+//   esportare e ripetere all'infinito. Respiro e rotazione sono
+//   "quantizzati" su un numero intero di cicli (vedi buildRings).
+// • I PARAMETRI REGOLABILI qui sotto sono le manopole principali:
+//   cambiarli ritocca il ritmo e l'aspetto senza toccare la logica.
 // ============================================================
 
 // ---------------- PARAMETRI REGOLABILI ----------------
@@ -93,10 +142,13 @@ const EMOTIONS = [
 
 // ------------------------------------------------------
 
-let table;
-let rings = [];
+let table;             // CSV grezzo dei questionari (../dati.csv)
+let rings = [];        // i 12 anelli pronti da disegnare (vedi buildRings)
 let sourceCodeProRegular, sourceCodeProBold;
 
+// preload(): p5 garantisce che font e dati siano caricati PRIMA di setup().
+// loadFrameAssets()/drawTemplateFrame() arrivano dallo script condiviso della
+// cornice (template), non da questo file.
 function preload() {
   sourceCodeProRegular = loadFont("../fonts/SourceCodePro-Regular.ttf");
   sourceCodeProBold = loadFont("../fonts/SourceCodePro-Bold.ttf");
@@ -104,6 +156,8 @@ function preload() {
   table = loadTable("../dati.csv", "csv", "header");
 }
 
+// setup(): si esegue una volta. Qui si fissano colori e stile del testo e,
+// soprattutto, si trasformano i dati grezzi negli anelli (aggregate + buildRings).
 function setup() {
   pixelDensity(1);
   createCanvas(OUT_W, OUT_H);
@@ -113,21 +167,27 @@ function setup() {
   noStroke();
   colorMode(HSB, 360, 100, 100, 100);
 
+  // estremi del gradiente "senso di controllo": il colore di ogni anello
+  // sarà un lerp tra questi due in base al controllo medio della sua emozione.
   COL_DARK = color('#2ECC71');   // poco controllo -> scuro/freddo
   COL_LIGHT = color('#3D7BD9');  // molto controllo -> chiaro/caldo
 
+  // pipeline dati: CSV -> statistiche per emozione -> anelli pronti a disegnare
   const stats = aggregate();
   rings = buildRings(stats);
 }
 
+// draw(): chiamato ~60 volte al secondo. Ridisegna sempre da capo (frame puro):
+// la cornice fissa, poi il contenuto scalato dentro l'area utile.
 function draw() {
   background(0);
-  drawTemplateFrame();            // cornice fissa
+  drawTemplateFrame();            // cornice fissa (dallo script del template)
   drawSketchScaled(drawContent);  // lo sketch, scalato dentro l'area
 }
 
-// inserisce il contenuto (W×H) nella cornice: scala sulla larghezza
-// utile, centrato verticalmente. NON modificare.
+// inserisce il contenuto (W×H) nella cornice: scala sulla larghezza utile e
+// centra verticalmente, così render() può lavorare sempre in coordinate native
+// 540×960 senza sapere nulla della risoluzione finale. NON modificare.
 function drawSketchScaled(render) {
   push();
   const area = applySketchClip();
@@ -139,15 +199,17 @@ function drawSketchScaled(render) {
   pop();
 }
 
+// disegna il contenuto vero e proprio nello spazio nativo W×H.
 function drawContent() {
-  const T = millis() * 0.001;
+  const T = millis() * 0.001;   // tempo in secondi dall'avvio
 
   // sfondo del palco (riempie l'area dello sketch)
   noStroke();
   fill(0, 0, 0);   // nero (HSB: luminosità 0)
   rect(0, 0, W, H);
 
-  // dall'esterno verso l'interno
+  // disegno dall'esterno verso l'interno (indici alti = anelli grandi):
+  // così gli anelli interni stanno "sopra" e restano leggibili.
   for (let i = rings.length - 1; i >= 0; i--) {
     drawRing(rings[i], T);
   }
@@ -157,37 +219,49 @@ function drawContent() {
 
 // ============================================================
 // AGGREGAZIONE DATI
+// Scorre il CSV una sola volta e, per ogni emozione, accumula:
+//   count        -> quante persone l'hanno scelta (la frequenza)
+//   eSum/eN      -> somma e conteggio dei voti "energia"   (per la media)
+//   sSum/sN      -> somma e conteggio dei voti "velocità"  (per la media)
+//   cSum/cN      -> somma e conteggio dei voti "controllo"  (per la media)
+// Si tengono somma e conteggio separati così la media è eSum/eN, e gli N
+// permettono di ignorare le risposte vuote senza falsare la media.
 // ============================================================
 
 function aggregate() {
   const stats = {};
 
-for (let i = 0; i < EMOTIONS.length; i++) {
-  const name = EMOTIONS[i];
+  // una voce vuota per ogni emozione attesa (anche se non comparirà nel CSV)
+  for (let i = 0; i < EMOTIONS.length; i++) {
+    const name = EMOTIONS[i];
 
-  stats[name] = {
-    count: 0,
-    eSum: 0,
-    eN: 0,
-    sSum: 0,
-    sN: 0,
-    cSum: 0,
-    cN: 0
-  };
-}
+    stats[name] = {
+      count: 0,
+      eSum: 0,
+      eN: 0,
+      sSum: 0,
+      sN: 0,
+      cSum: 0,
+      cN: 0
+    };
+  }
 
+  // le colonne sono individuate per FRAMMENTO del titolo della domanda:
+  // così il codice non si rompe se l'intestazione esatta nel CSV cambia.
   const cols = table.columns;
   const emoCol = cols.find((c) => c.includes("parola che si avvicina"));
   const enCol = cols.find((c) => c.includes("livello di energia"));
   const spCol = cols.find((c) => c.includes("veloce questo viaggio"));
   const ctCol = cols.find((c) => c.includes("senti in controllo"));
 
+  // numeri scritti con la virgola decimale (es. "3,5") -> float
   const num = (r, col) => parseFloat((table.getString(r, col) || "").replace(",", "."));
 
   for (let r = 0; r < table.getRowCount(); r++) {
     const emo = (table.getString(r, emoCol) || "").trim();
-    if (!stats[emo]) continue;
+    if (!stats[emo]) continue;   // riga senza un'emozione riconosciuta: si salta
     stats[emo].count++;
+    // ogni media accumula solo i valori validi (isNaN scarta le celle vuote)
     const e = num(r, enCol); if (!isNaN(e)) { stats[emo].eSum += e; stats[emo].eN++; }
     const s = num(r, spCol); if (!isNaN(s)) { stats[emo].sSum += s; stats[emo].sN++; }
     const c = num(r, ctCol); if (!isNaN(c)) { stats[emo].cSum += c; stats[emo].cN++; }
@@ -197,26 +271,31 @@ for (let i = 0; i < EMOTIONS.length; i++) {
 
 // ============================================================
 // COSTRUZIONE ANELLI (rettangoli arrotondati)
+// Trasforma le statistiche per emozione in oggetti "ring" già pronti per
+// drawRing(). Qui avvengono TUTTI i mapping dato -> forma; drawRing si limita
+// poi ad animarli nel tempo. Calcolato una volta sola in setup().
 // ============================================================
 
 function buildRings(stats) {
   const out = [];
-  
-    // Ordine interno -> esterno:
-  // meno frequenti dentro, più frequenti fuori
+
+  // Ordine interno -> esterno: emozioni meno frequenti al centro, più
+  // frequenti all'esterno. L'indice i nel ciclo è quindi anche il "raggio".
   const orderedEmotions = [...EMOTIONS].sort((a, b) => {
     return stats[a].count - stats[b].count;
   });
 
-  // medie del controllo, per definire min/max del gradiente
+  // medie del controllo di tutti gli anelli: servono a fissare gli estremi
+  // del gradiente, così il più basso = colore scuro e il più alto = chiaro
+  // (default 3 = neutro se un'emozione non ha risposte di controllo).
   const controls = orderedEmotions.map((n) =>
     stats[n].cN ? stats[n].cSum / stats[n].cN : 3
   );
   const cMin = min(controls);
   const cMax = max(controls);
 
-  // velocità di rotazione di tutti gli anelli, per quantizzare i giri sul
-  // RAPPORTO (il più lento = 1 giro), così nessun anello resta fermo
+  // velocità di rotazione di tutti gli anelli: serve a quantizzare i giri sul
+  // RAPPORTO con il più lento (= 1 giro per loop), così nessun anello resta fermo.
   const rotFracs = orderedEmotions.map((n) =>
     map(stats[n].sN ? stats[n].sSum / stats[n].sN : 5, 1, 10, ROT_SLOW, ROT_FAST, true)
   );
@@ -226,60 +305,78 @@ function buildRings(stats) {
     const name = orderedEmotions[i];
     const st = stats[name];
 
+    // --- GEOMETRIA: ogni anello è più grande del precedente di RING_GAP ---
     const hw = INNER_HW + i * RING_GAP;
     const hhTop = INNER_HH + i * RING_GAP;             // estensione verso l'alto
     // verso il basso: +STRETCH_DOWN_FRAC dell'altezza piena del rettangolo
+    // (la forma è "a goccia", più allungata in basso che in alto)
     const hhBot = hhTop * (1 + 2 * STRETCH_DOWN_FRAC); // estensione verso il basso
-    const cr = min(hw, hhTop) * CORNER_FRAC;
+    const cr = min(hw, hhTop) * CORNER_FRAC;           // raggio degli angoli
     const fontSize = FONT_MAX;
 
+    // il perimetro: P = lunghezza totale, perim.at(s) = punto a distanza s
     const perim = rectPerimeter(hw, hhTop, hhBot, cr);
     const P = perim.P;
 
+    // --- MEDIE DEI DATI (default neutri se mancano risposte) ---
     const avgEnergy = st.eN ? st.eSum / st.eN : 3;
     const avgSpeed = st.sN ? st.sSum / st.sN : 5;
     const avgControl = st.cN ? st.cSum / st.cN : 3;
 
-    // lunghezza-dato: frazione del perimetro proporzionale alle risposte
-    // (QUESTIONS_PER_SEMICIRCLE risposte = mezzo perimetro)
+    // LUNGHEZZA-DATO = frazione del perimetro proporzionale al numero di
+    // risposte (QUESTIONS_PER_SEMICIRCLE risposte = mezzo perimetro). È la
+    // lunghezza "a riposo" del nastro di parole.
     const dataFrac = constrain(st.count / (2 * QUESTIONS_PER_SEMICIRCLE), 0.01, 1);
     const dataLen = dataFrac * P;
 
+    // RESPIRO (energia) -> secondi per ciclo: più energia = ciclo più corto.
+    // ROTAZIONE (velocità) -> frazione di perimetro al secondo.
     const period = map(avgEnergy, 1, 5, ENERGY_SLOW_PERIOD, ENERGY_FAST_PERIOD, true);
     const rotFrac = map(avgSpeed, 1, 10, ROT_SLOW, ROT_FAST, true);
 
-    // --- loop seamless: respiro e rotazione agganciati a LOOP_SECONDS ---
+    // ----------------------------------------------------------------
+    // LOOP SENZA CUCITURE
+    // Tutto ciò che segue serve a far sì che a t = LOOP_SECONDS l'anello
+    // sia identico a t = 0. La regola: respiro e rotazione devono compiere
+    // un numero INTERO di cicli/giri dentro la durata del loop.
+    // ----------------------------------------------------------------
+
+    // sfasamenti iniziali diversi per anello, così non "respirano" all'unisono
     const phase = (i * 0.41) % 1;
     const spin0 = P * ((i * 0.137) % 1); // posizione di partenza lungo il tracciato
 
-    // respiro: numero INTERO di cicli nel loop (periodo ~ quello dei dati)
+    // respiro: arrotonda al numero INTERO di cicli più vicino al periodo dei
+    // dati, poi ricava il periodo "effettivo" che entra esatto nel loop.
     const nBreaths = max(1, round(LOOP_SECONDS / period));
     const effPeriod = LOOP_SECONDS / nBreaths;
 
-    // rotazione: tabella cumulativa del "ritmo" (REST_SPIN a riposo, scorre col
-    // respiro) normalizzata 0..1, così lo spin avanza di nRot*P interi nel loop
-    // e torna alla posizione di partenza. nRot = giri interi più vicini al moto
-    // reale (anelli lenti -> 0 giri: fermi ma respirano; veloci -> 1+ giri).
+    // rotazione "respirante": l'anello gira più in fretta mentre respira e
+    // rallenta (a REST_SPIN) a riposo. Per chiudere il loop precalcoliamo una
+    // TABELLA CUMULATIVA del moto: cum[k] = quanta strada è stata percorsa
+    // fino all'istante k. Integriamo numericamente (regola dei trapezi) la
+    // "velocità istantanea" REST_SPIN..1 su NS campioni del loop.
     const NS = 600, stepT = LOOP_SECONDS / NS;
     const cum = new Float32Array(NS + 1);
     let acc = 0, prevR = REST_SPIN + (1 - REST_SPIN) * pulseAt(0, effPeriod, phase);
     for (let k = 1; k <= NS; k++) {
       const curR = REST_SPIN + (1 - REST_SPIN) * pulseAt(k * stepT, effPeriod, phase);
-      acc += 0.5 * (prevR + curR) * stepT; // trapezi
+      acc += 0.5 * (prevR + curR) * stepT; // area del trapezio tra due campioni
       cum[k] = acc; prevR = curR;
     }
     const rawTotal = cum[NS] || 1;
     // giri interi proporzionali alla velocità relativa: il più lento fa 1 giro,
-    // gli altri di più. Mai 0 -> tutti gli anelli ruotano.
+    // gli altri di più. Mai 0 -> tutti gli anelli ruotano davvero.
     const nRot = max(1, round(rotFrac / rotMin));
+    // normalizza la tabella in 0..1: così basta moltiplicare per nRot*P per
+    // sapere di quanto è avanzato lo spin (vedi drawRing/sampleCum).
     for (let k = 0; k <= NS; k++) cum[k] /= rawTotal;
 
-    // colore dal controllo: cMin -> scuro, cMax -> chiaro
+    // COLORE dal controllo: avgControl mappato da [cMin,cMax] a [scuro,chiaro]
     const ct = cMax > cMin ? (avgControl - cMin) / (cMax - cMin) : 0.5;
     const col = lerpColor(COL_DARK, COL_LIGHT, ct);
 
-    // testo (parola ripetuta) lungo abbastanza da riempire la
-    // lunghezza-dato a misura naturale delle lettere
+    // TESTO: la parola (+ separatore) ripetuta finché il nastro è lungo almeno
+    // quanto la lunghezza-dato a riposo. Il safety evita loop infiniti.
     textSize(fontSize);
     const unit = (name + SEPARATOR).toUpperCase();
     let str = "";
@@ -290,6 +387,7 @@ function buildRings(stats) {
     }
     if (str.length === 0) str = unit;
 
+    // oggetto "ring": tutto ciò che serve a drawRing per animarlo nel tempo
     out.push({
       name,
       count: st.count,
@@ -319,12 +417,22 @@ function measureAdvance(str, fontSize) {
 
 // ============================================================
 // PERIMETRO DI UN RETTANGOLO ARROTONDATO (centrato in 0,0)
-// at(s) -> {x, y} con s in [0, P), partendo dal centro-alto, orario
+//
+// Restituisce { P, at }:
+//   P       = lunghezza totale del bordo
+//   at(s)   = il punto {x, y} a distanza s lungo il bordo, con s in [0, P),
+//             partendo dal centro del lato alto e procedendo in senso orario.
+// È questo che permette al testo di "camminare" sul perimetro: basta
+// chiedere at(distanza) per ogni lettera. Il bordo è descritto come una
+// catena di SEGMENTI (rette e archi), ognuno con la sua lunghezza; at()
+// trova il segmento giusto e vi interpola dentro.
 // ============================================================
 
 function rectPerimeter(hw, hhTop, hhBot, r) {
-  r = min(r, hw, hhTop, hhBot);
+  r = min(r, hw, hhTop, hhBot);   // l'angolo non può superare i mezzi-lati
   const segs = [];
+  // add(): accoda un segmento calcolando dove inizia/finisce in distanza
+  // cumulata, così ogni seg conosce il proprio intervallo [start, end] su P.
   const add = (seg) => { seg.start = (segs.length ? segs[segs.length - 1].end : 0); seg.end = seg.start + seg.len; segs.push(seg); };
 
   const line = (x0, y0, x1, y1) =>
@@ -345,6 +453,9 @@ function rectPerimeter(hw, hhTop, hhBot, r) {
 
   const P = segs[segs.length - 1].end;
 
+  // at(s): trova il punto sul bordo a distanza s. s viene riportato in [0,P)
+  // (così girare oltre il perimetro "riavvolge"), poi si cerca il segmento che
+  // contiene s e si interpola: lineare sulle rette, sull'angolo sugli archi.
   const at = (s) => {
     s = ((s % P) + P) % P;
     for (const seg of segs) {
@@ -368,29 +479,36 @@ function rectPerimeter(hw, hhTop, hhBot, r) {
 // ============================================================
 
 function drawRing(ring, T) {
-  // tempo dentro il ciclo: tutto è funzione pura di tLoop -> loop seamless
+  // tempo riportato dentro il ciclo [0, LOOP_SECONDS): da qui in poi tutto è
+  // funzione PURA di tLoop, ed è ciò che rende il loop perfetto.
   const tLoop = ((T % LOOP_SECONDS) + LOOP_SECONDS) % LOOP_SECONDS;
 
+  // RESPIRO: u = fase del respiro in [0,1); p = apertura 0 (riposo) .. 1 (pieno)
   const u = ((tLoop / ring.effPeriod + ring.phase) % 1 + 1) % 1;
   const p = elasticPulse(u); // 0 = a riposo, 1 = perimetro intero
 
-  // rotazione: avanza di nRot*P interi nel loop (ferma a riposo, scorre col
-  // respiro tramite la tabella cumulativa) -> a fine loop torna a spin0
+  // ROTAZIONE: lo spin avanza di nRot*P interi nel loop, modulato dalla tabella
+  // cumulativa (fermo a riposo, scorre durante il respiro). A fine loop la
+  // tabella vale 1 -> spin = spin0 + nRot*P, cioè spin0 a meno di giri interi.
   const spin = ring.spin0 + ring.nRot * ring.P * sampleCum(ring.cum, tLoop / LOOP_SECONDS);
 
+  // lunghezza attuale del nastro: tra la lunghezza-dato (riposo) e tutto il
+  // perimetro (respiro pieno). È questo che fa "allungare" il testo.
   const currentLen = lerp(ring.dataLen, ring.P, p);
 
   textSize(ring.fontSize);
   const chars = [...ring.text];
   const n = chars.length;
 
-  // larghezza naturale complessiva del testo
+  // larghezza naturale complessiva del testo (lettere a distanza normale)
   let naturalLen = 0;
   for (const ch of chars) {
     naturalLen += textWidth(ch) + TRACKING;
   }
 
-  // invece di deformare le lettere, dilatiamo lo spazio tra loro
+  // invece di DEFORMARE le lettere (che diventerebbero illeggibili), dilatiamo
+  // lo SPAZIO tra loro: lo stesso testo riempie currentLen restando nitido.
+  // Il constrain evita estremi (lettere appiccicate o troppo sparse).
   let spacingScale = naturalLen > 0 ? currentLen / naturalLen : 1;
   spacingScale = constrain(
     spacingScale,
@@ -401,25 +519,28 @@ function drawRing(ring, T) {
   const baseCol = ring.color;
 
   push();
-  translate(CENTER_X, CENTER_Y);
+  translate(CENTER_X, CENTER_Y);   // origine al centro degli anelli
 
-  // cursore lungo la stringa, centrato rispetto alla lunghezza attuale
+  // cursore = distanza lungo il bordo, centrata sulla lunghezza attuale
+  // (il nastro è simmetrico rispetto al punto di partenza spin)
   let cursor = -currentLen / 2;
 
   for (let i = 0; i < n; i++) {
     const ch = chars[i];
 
     const charW = textWidth(ch);
-    const adv = (charW + TRACKING) * spacingScale;
+    const adv = (charW + TRACKING) * spacingScale;   // passo della lettera
 
-    // centro della lettera nello spazio dilatato
+    // d = centro della lettera nel nastro; s = sua posizione assoluta sul bordo
     const d = cursor + adv / 2;
     const s = spin + d;
 
     cursor += adv;
 
-    if (ch === " ") continue;
+    if (ch === " ") continue;   // gli spazi avanzano ma non si disegnano
 
+    // posizione della lettera + ORIENTAMENTO: confrontando due punti vicini
+    // (s±0.6) si ricava la tangente al bordo, così la lettera "segue" la curva.
     const pt = ring.perim.at(s);
     const a = ring.perim.at(s + 0.6);
     const b = ring.perim.at(s - 0.6);
@@ -431,7 +552,7 @@ function drawRing(ring, T) {
     translate(pt.x, pt.y);
     rotate(ang);
 
-    // niente scale: la lettera resta normale
+    // niente scale: la lettera resta a dimensione naturale (vedi spacingScale)
     text(ch, 0, 0);
 
     pop();
@@ -536,23 +657,29 @@ function drawLegendColor(xL, xR, y, key, val, alignRight) {
 // RESPIRO: tanto tempo a riposo, breve estensione fino al perimetro
 // ============================================================
 
+// elasticPulse(u): dato u = fase del respiro in [0,1), restituisce l'apertura
+// in [0,1]. La curva non è simmetrica: una fase di apertura, una breve tenuta
+// al massimo, una chiusura, e poi un lungo riposo a 0. Così le parole stanno
+// ferme e leggibili per la maggior parte del tempo e "respirano" solo a tratti.
 function elasticPulse(u) {
-  const OPEN = 0.20;  // si estende
-  const HOLD = 0.05;  // tiene aperto
-  const CLOSE = 0.20; // torna a riposo
+  const OPEN = 0.20;  // si estende (ease-out: parte rapida, frena)
+  const HOLD = 0.05;  // tiene aperto al massimo
+  const CLOSE = 0.20; // torna a riposo (ease-in-out: morbida)
   if (u < OPEN) return easeOutCubic(u / OPEN);
   if (u < OPEN + HOLD) return 1;
   if (u < OPEN + HOLD + CLOSE) return 1 - easeInOutCubic((u - OPEN - HOLD) / CLOSE);
   return 0; // resto del tempo: a riposo (parole ferme)
 }
 
-// respiro a un dato istante (t in secondi), per periodo e fase dell'anello
+// apertura del respiro a un dato istante t (secondi), per periodo e fase
+// dell'anello. Usata in buildRings per precalcolare la tabella di rotazione.
 function pulseAt(t, period, phase) {
   const u = ((t / period + phase) % 1 + 1) % 1;
   return elasticPulse(u);
 }
 
-// legge la tabella cumulativa normalizzata in x in [0,1] (interpolazione lineare)
+// legge la tabella cumulativa normalizzata in x in [0,1] (interpolazione
+// lineare tra i due campioni più vicini). È l'inversa di "quanta strada".
 function sampleCum(cum, x) {
   const NS = cum.length - 1;
   const f = constrain(x, 0, 1) * NS;
@@ -560,10 +687,13 @@ function sampleCum(cum, x) {
   return i >= NS ? cum[NS] : lerp(cum[i], cum[i + 1], f - i);
 }
 
+// curve di smorzamento standard, x in [0,1] -> [0,1].
+// easeOutCubic: parte veloce e rallenta (buona per l'apertura del respiro).
 function easeOutCubic(x) {
   return 1 - pow(1 - x, 3);
 }
 
+// easeInOutCubic: lenta agli estremi, veloce al centro (chiusura morbida).
 function easeInOutCubic(x) {
   return x < 0.5 ? 4 * x * x * x : 1 - pow(-2 * x + 2, 3) / 2;
 }

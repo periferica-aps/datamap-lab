@@ -1,3 +1,58 @@
+// =====================================================================
+//  MADONNA ALTA — "VIAGGIATORI OCCASIONALI / ABITUALI"
+//  Progetto Tracciati 2026 · DATA MAP LAB · Periferica APS
+//  Stazione Minimetrò di Perugia · formato verticale 9:16
+//
+//  Autori:
+//    Giacomo Lazzerini
+//    Beatrice Acetosi  (studentessa)
+//    Vittoria Fabrizi  (studentessa)
+//
+//  ------------------------------------------------------------------
+//  COSA FA L'ANIMAZIONE
+//  ------------------------------------------------------------------
+//  La visualizzazione è strutturata in QUATTRO FASCE parallele (METRICS),
+//  una per ciascuna domanda del sondaggio sulla vita di comunità:
+//    • Affinità con le persone
+//    • Sicurezza tra sconosciuti
+//    • Senso di appartenenza
+//    • Voglia di interagire con gli altri
+//  Lo schermo è diviso in due colonne speculari: a sinistra i VIAGGIATORI
+//  OCCASIONALI, a destra gli ABITUALI (distinti dalla frequenza d'uso).
+//
+//  Dentro ogni fascia, le PAROLE-emozione scelte dai passeggeri sono
+//  l'unità grafica fondamentale. Le codifiche (vedi legenda in basso):
+//    • LUNGHEZZA della barra di testo -> media (1..5) del punteggio dato
+//      a quella domanda da quel gruppo: la parola si dilata fino a
+//      formare una vera e propria barra orizzontale
+//    • COLORE di ogni parola -> punteggio di FELICITÀ ("Quanto sei
+//      contento?", 1..5) di chi ha scritto quella parola (5 colori
+//      discreti, modalità 'steps'; vedi wordColor)
+//    • MOVIMENTO/rotazione delle parole -> restituisce il viavai dei
+//      passeggeri col passare delle ORE del servizio (orologio in basso)
+//
+//  L'animazione scorre le ore del servizio (PHASES, una per fascia oraria),
+//  con un keyframe finale "TOTALE" su cui si ferma mostrando le medie su
+//  tutto il dataset, poi riparte: loop continuo.
+//
+//  ------------------------------------------------------------------
+//  COME È FATTO (per chi vuole riutilizzarlo)
+//  ------------------------------------------------------------------
+//  • Dati letti da ../dati.csv (buildPhases): le risposte sono raggruppate
+//    per ORA di compilazione e per gruppo (occasionali/abituali); per ogni
+//    cella si tengono le parole e le medie delle 4 domande.
+//  • flowPos() gestisce la timeline: interpola tra una fascia oraria e la
+//    successiva (secPerHour) e poi tiene il keyframe TOTALE (holdSec) con
+//    entrata/uscita morbida dei punteggi laterali.
+//  • Le parole sono adattate alla barra senza deformarle troppo
+//    (fitWordToBar: dilata gli spazi, oppure schiaccia/rimpicciolisce/tronca
+//    se sono più larghe della barra).
+//  • Tutto è disegnato in spazio nativo W×H e scalato nella cornice
+//    condivisa (drawSketchScaled + templateFrame.js).
+//
+//  Tasti (solo anteprima): SPAZIO = pausa · ↑/↓ = velocità · F = fullscreen
+// =====================================================================
+
 const CSV_NAME = '../dati.csv';
 const OUT_W = 1080, OUT_H = 1920;
 const W = 980, H = 1520;
@@ -258,7 +313,13 @@ function groupOf(raw) {
   return null;
 }
 
-/* ════════════════════════════ BUILD PHASES ════════════════════════ */
+/* ════════════════════════════ BUILD PHASES ════════════════════════
+   Costruisce l'array PHASES: una "fase" per ogni ora del servizio con
+   risposte (più un keyframe iniziale a barre zero e uno finale "TOTALE").
+   Ogni fase contiene, per i due gruppi (occasionali/abituali), le parole
+   raccolte e le medie 1..5 delle quattro domande (METRICS). L'animazione
+   interpola tra fasi consecutive per "scorrere" nell'orario.
+   ══════════════════════════════════════════════════════════════════ */
 
 function buildPhases() {
   function emptyM() {
@@ -578,6 +639,11 @@ function validWordItems(words) {
   });
 }
 
+// Adatta una parola a una barra larga `target`. Se ci sta, dilata gli spazi
+// tra le lettere per riempirla; se è troppo larga, applica la strategia
+// scelta in CFG.squeezeWords: 'shrink' (font più piccolo), 'truncate' (taglia
+// le lettere in eccesso, provando prima una sigla di consonanti) o 'squeeze'
+// (compressione orizzontale). Restituisce { text, spacing, scaleX, sz }.
 function fitWordToBar(word, target, sz) {
   textSize(sz);
   applyWordStyle(sz);

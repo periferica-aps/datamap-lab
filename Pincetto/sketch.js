@@ -1,12 +1,39 @@
 // ============================================================
-// DATAMAP — titolo animato (formato verticale 9:16)
+// PINCETTO — "DATAMAP" (titolo animato / wallpaper del capolinea)
+// Progetto Tracciati 2026 · DATA MAP LAB · Periferica APS
+// Stazione Minimetrò di Perugia · formato verticale 9:16
 //
-// Replica del manifesto datamapvid.pdf, animato come video.gif.
-// Una griglia di parole "DATAMAP" (3 colonne x N righe). Una sola
-// FASCIA DIAGONALE alla volta ha le lettere DISTANZIATE
-// ( D A T A M A P ); tutte le altre parole sono COMPATTE ( DATAMAP ).
-// La fascia scorre lateralmente tra le colonne, in loop, con una
-// leggera inclinazione (la colonna "aperta" slitta scendendo).
+// Autore: Giacomo Lazzerini
+//
+// ------------------------------------------------------------
+// COS'È
+// ------------------------------------------------------------
+// A differenza degli altri sketch, questo NON visualizza dati del
+// questionario: è il WALLPAPER realizzato per il capolinea del
+// Pincetto, pensato per fare da titolo e guidare la mostra/esposizione
+// del progetto. Replica animata del manifesto (datamapvid.pdf).
+//
+// ------------------------------------------------------------
+// COSA FA L'ANIMAZIONE
+// ------------------------------------------------------------
+// Una griglia di parole "DATAMAP" (NCOLS colonne × NROWS righe). In
+// ogni momento UNA sola FASCIA DIAGONALE ha le lettere DISTANZIATE
+// ( D A T A M A P ); tutte le altre parole restano COMPATTE ( DATAMAP ).
+// La fascia "aperta" scorre lateralmente tra le colonne, in loop
+// continuo, con una leggera inclinazione (slitta scendendo riga dopo
+// riga). In basso, footer e QR code completano il manifesto.
+//
+// ------------------------------------------------------------
+// COME È FATTO (per chi vuole riutilizzarlo)
+// ------------------------------------------------------------
+// • Ogni riga è UN unico flusso continuo: lo spazio che avanza nella
+//   larghezza della griglia viene "donato" alla parola aperta, così la
+//   riga resta sempre piena senza buchi (vedi il ciclo in draw + extra).
+// • bandSpread(c, center) decide quanto è aperta ogni colonna in base
+//   alla distanza CIRCOLARE dal centro della fascia: per questo il
+//   passaggio tra ultima e prima colonna è continuo (loop senza salti).
+// • Tutto è disegnato in uno spazio nativo 540×960 (REF_W×REF_H) e
+//   scalato sul canvas 1080×1920; il CSS adatta poi alla finestra.
 // ============================================================
 
 // ---------------- PARAMETRI REGOLABILI ----------------

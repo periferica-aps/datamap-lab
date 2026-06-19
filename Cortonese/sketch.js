@@ -1,29 +1,63 @@
 /* ============================================================
-   AFFECT GRID ORBITALE — Minimetrò (v6 · accumulo temporale)
-   9:16 verticale · Source Code Pro · canvas nero
+   CORTONESE — "AFFECT GRID ORBITALE"
+   Progetto Tracciati 2026 · DATA MAP LAB · Periferica APS
+   Stazione Minimetrò di Perugia · formato verticale 9:16
+
+   Autori:
+     Giacomo Lazzerini
+     Caterina Cardinali  (studentessa)
+     Valentina Gaggia    (studentessa)
+
    ------------------------------------------------------------
-   Concetto:
-   - Niente "entrata in scena". I blob si FORMANO nel tempo:
-     ogni risposta (ordinata per Submitted At) appare come un
-     punto = una persona, colorato per stazione di partenza.
-     Col passare del tempo i cluster crescono e diventano
-     irregolari (più risposte = blob più grande).
-   - Ogni blob sta in una cella della griglia energia × contentezza
-     (25 combinazioni possibili).
-   - Attorno ruotano le PAROLE-emozione raccolte (un insieme di
-     parole diverse, non una sola ripetuta) — non si sovrappongono.
-   - N° di anelli = media (in continuo aggiornamento) della voglia
-     di scambiare parole per quella cella.
-   - Velocità di rotazione = media della "velocità percepita" (1..10).
-   - Colore dei punti = stazione di partenza (composizione leggibile
-     dal mix di colori dentro il cluster).
-   - Quando tutte le risposte sono comparse: breve pausa, poi il
-     grafico si svuota rapidamente (shrink) e il loop riparte.
+   COSA FA L'ANIMAZIONE
+   ------------------------------------------------------------
+   I dati su interazione e condivisione dello spazio nel Minimetrò
+   sono disposti su un GRAFICO A QUATTRO QUADRANTI (una griglia 5×5):
+     • asse X = ENERGIA   -> quanto la persona si sente attiva
+     • asse Y = CONTENTEZZA -> quanto la persona si sente contenta
+   Le due risposte (energia, contentezza), arrotondate a 1..5,
+   collocano ogni questionario in una delle 25 celle.
 
-   Stile: motion design pulito ed essenziale. Tinte piatte, niente
-   gradienti / trasparenze decorative / contorni / linee nere.
+   Niente "entrata in scena": i nuclei si FORMANO nel tempo. Le
+   risposte compaiono in ordine cronologico (colonna "Submitted At");
+   ognuna è un PUNTO = una persona, colorato per STAZIONE DI PARTENZA.
+   Più risposte cadono in una cella, più il suo nucleo cresce e si fa
+   irregolare; il MIX di colori dentro il nucleo racconta da quali
+   stazioni arrivano le persone di quel quadrante.
 
-   Tasti: SPAZIO = pausa · R = riavvia loop · ↑/↓ = velocità · F = fullscreen
+   Attorno a ogni nucleo ruotano ORBITE fatte con le PAROLE-emozione
+   lasciate dai passeggeri (parole diverse, non una sola ripetuta).
+   Le codifiche (vedi legenda):
+     • GRANDEZZA del nucleo  -> numero di persone in quella cella
+     • N° di ANELLI/orbite   -> voglia media di scambiare parole con
+                                gli altri (disponibilità a relazionarsi)
+     • VELOCITÀ di rotazione -> "velocità percepita" media del viaggio
+     • COLORE dei punti/lettere -> stazione di partenza
+
+   Quando tutte le risposte sono comparse: breve pausa (hold), poi il
+   grafico si svuota rapidamente (shrink) e il loop riparte da capo.
+
+   Stile: motion design pulito. Tinte piatte, niente gradienti /
+   trasparenze decorative / contorni / linee nere.
+
+   ------------------------------------------------------------
+   COME È FATTO (per chi vuole riutilizzarlo)
+   ------------------------------------------------------------
+   • I dati sono letti da ../dati.csv e aggregati a runtime in
+     parseData(): le risposte vengono ordinate per tempo e suddivise
+     in "celle" (combinazioni energia,contentezza).
+   • Il LOOP TEMPORALE ha 4 fasi (CFG: buildDur/holdDur/outDur/gapDur)
+     gestite da loopState(): build (accumulo) → hold (fermo) → out
+     (svuotamento) → gap (pausa). È pensato per esportare un video
+     in loop seamless (vedi setupExport / export.html).
+   • Tutto è disegnato nello spazio nativo W×H e poi scalato dentro la
+     cornice condivisa (drawSketchScaled + templateFrame.js).
+   • I punti sono impacchettati con disposizione a phyllotaxis (angolo
+     aureo) in buildLayout; le orbite seguono la silhouette del nucleo
+     (ropeRadiusAt) e prendono colore da una "maschera angolare"
+     proporzionale alla composizione di stazioni (angularColor).
+
+   Tasti (solo in anteprima): SPAZIO = pausa · R = riavvia · ↑/↓ = velocità · F = fullscreen
    ============================================================ */
 
 const CSV_NAME = '../dati.csv';
@@ -231,6 +265,11 @@ function parseTime(s){
   return new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6]).getTime();
 }
 
+// Legge il CSV grezzo e lo trasforma in:
+//   RESPONSES = elenco di risposte ordinate per tempo (guida l'accumulo)
+//   CELLS     = celle della griglia (energia,contentezza) con i loro punti
+// Qui si fa anche il "packing slot" (posizione del punto nel cluster) e si
+// assegna il colore di stazione a ogni risposta.
 function parseData(){
   const rows = table.getRowCount();
   const list = [];
@@ -334,7 +373,8 @@ function cellUnit(){
   return Math.min((b.right - b.left) / 4, (b.bottom - b.top) / 4);
 }
 
-// X = energia, Y = contentezza
+// Centro a schermo della cella (e,h): X dall'energia, Y dalla contentezza.
+// e,h in 1..5 vengono rimappati su [-1,+1] rispetto al centro 3 della griglia.
 function cellCenter(e, h){
   const b = gridBounds();
   const cx = (b.left + b.right) / 2;
@@ -455,6 +495,11 @@ function easeInCubic(t){ return t * t * t; }
 
 /* ---------- stato del loop ---------- */
 
+// Dato il tempo in secondi, restituisce lo stato dell'animazione dentro il
+// ciclo (build/hold/out/gap):
+//   revealedFloat = quante risposte sono "comparse" finora (frazionario)
+//   gOut          = fattore di scala 1→0 durante lo svuotamento finale
+//   phase         = nome della fase corrente
 function loopState(tSec){
   const { buildDur: TB, holdDur: TH, outDur: TO, gapDur: TG } = CFG;
   const cycle = TB + TH + TO + TG;

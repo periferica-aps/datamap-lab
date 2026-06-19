@@ -1,23 +1,62 @@
 /* ============================================================================
-   SOFFIONI v4 — sketch p5.js per display 9:16 (es. metro station)
+   CUPA — "SOFFIONI" (dente di leone)
+   Progetto Tracciati 2026 · DATA MAP LAB · Periferica APS
+   Stazione Minimetrò di Perugia · formato verticale 9:16
 
-   Ciclo per ogni fiore:
-     1. WRITE1  : la corda di testo cresce dalla base verso la corolla
+   Autori:
+     Giacomo Lazzerini
+     Cecilia Boschetti  (studentessa)
+     Desiree Martire    (studentessa)
+
+   ----------------------------------------------------------------------------
+   COSA FA L'ANIMAZIONE
+   ----------------------------------------------------------------------------
+   Ogni SOFFIONE (forma ispirata al dente di leone) rappresenta le risposte di
+   UN SINGOLO passeggero. Le codifiche dei dati (vedi legenda):
+     • ALTEZZA dello stelo  -> ETÀ del viaggiatore (più alto = più anziano)
+     • COLORE della figura  -> STATO D'ANIMO della persona: caldo/arancio per
+       chi si dichiara felice, azzurro per chi si dichiara triste
+       (vedi MOODS / moodFromValue).
+
+   L'animazione segue una cronologia accelerata: i soffioni compaiono in ordine
+   di compilazione (colonna "Submitted At"). Il ciclo vitale della forma è
+   scandito dal TESTO, in due fasi:
+     1) la frase che la persona vorrebbe RICEVERE cresce dalla base e modella la
+        struttura a SPIRALE del fiore;
+     2) quella spirale scompare al centro e lascia il posto alla frase che la
+        persona vorrebbe LASCIARE agli altri passeggeri: questa si sviluppa in
+        senso OPPOSTO, sale come uno stelo e si disperde — le lettere si
+        STACCANO e volano via nel vento, accogliendo nuove persone.
+
+   ----------------------------------------------------------------------------
+   STRUTTURA DEL CICLO (per ogni fiore, vedi updatePhase)
+   ----------------------------------------------------------------------------
+     1. WRITE1  : la corda di testo (frase RICEVERE) cresce dalla base alla corolla
      2. HOLD1   : tiene la forma piena
-     3. VANISH1 : sparisce COMPLETAMENTE dal basso verso il centro (no remnant)
-     4. PHASE2  : una NUOVA corda con un testo DIVERSO ricomincia dal centro,
-                  si arrotola verso l'esterno con chiralità OPPOSTA, poi
-                  diventa un gambo che sale. Mentre sale, le lettere
-                  si STACCANO dalla corda e volano via come particelle libere
-                  spinte dal vento. Più in alto → più lettere si scompongono.
+     3. VANISH1 : sparisce COMPLETAMENTE dal basso verso il centro
+     4. PHASE2  : una NUOVA corda (frase LASCIARE) parte dal centro, si arrotola
+                  con chiralità OPPOSTA, poi diventa stelo che sale; man mano le
+                  lettere si staccano e volano via come particelle libere
      5. AFTER   : attesa per le particelle ancora in volo
-     6. GAP     : breve pausa, poi loop.
+     6. GAP     : breve pausa, poi il fiore passa al dato successivo
 
-   Nessuna trasparenza/opacità: le lettere sono visibili o non disegnate.
-   Due "mood" di fiori: azzurro+pendente, caldo+dritto.
-   Vento variabile (Perlin) = caos controllato e reattivo.
+   ----------------------------------------------------------------------------
+   COME È FATTO (per chi vuole riutilizzarlo)
+   ----------------------------------------------------------------------------
+   • Dati letti da dati_subset.csv (prepareFlowerData): una riga = un fiore,
+     ordinati per data. Ogni fiore ha frase1 (ricevere), frase2 (lasciare),
+     mood (colore) e stemFactor (età → altezza stelo).
+   • Ci sono pochi "canali" (NUM_FLOWERS) sfasati nel tempo: ognuno scorre i
+     suoi dati uno dopo l'altro, così a schermo ci sono sempre più soffioni in
+     fasi diverse. computeLoopDuration calcola quando tutti i dati sono passati.
+   • Le corde sono catene di punti con una piccola fisica verlet (_physicsRope:
+     molle verso il target + vento Perlin + rigidità). Le lettere sono disposte
+     lungo la corda per lunghezza d'arco; staccandosi diventano Particle.
+   • Nessuna trasparenza: le lettere sono visibili oppure non disegnate.
+   • LOOP SEAMLESS: a fine giro una "raffica finale" (T_END_GUST) spazza via le
+     ultime particelle così lo schermo torna vuoto come al frame 0.
 
-   Source Code Pro viene caricato localmente dalla repository.
+   Source Code Pro è caricato localmente dalla repository.
    ============================================================================ */
 
 /* ---- editable ---- */
@@ -212,6 +251,8 @@ function parseSubmittedAt(v) {
   return new Date(yyyy, mm - 1, dd, hh, min, ss).getTime();
 }
 
+// Stato d'animo -> mood (colore + verso della corolla). "triste" = azzurro
+// pendente, "felice" = caldo dritto; qualunque altro valore ricade su azzurro.
 function moodFromValue(v) {
   const mood = cleanText(v).toLowerCase();
   if (mood.includes("trist")) return MOODS.find(m => m.id === "azure");
@@ -260,7 +301,11 @@ function prepareFlowerData() {
   });
 }
 
-/* ========================================================================== */
+/* ==========================================================================
+   Particle: una singola LETTERA staccatasi da uno stelo e ora libera nel vento.
+   Vive di moto proprio (velocità + vento Perlin + turbolenza) finché non esce
+   dall'area; durante la raffica finale (particleEvac) viene spinta fuori schermo.
+   ========================================================================== */
 class Particle {
   constructor(x, y, vx, vy, ch, rot, col, fs) {
     this.x = x; this.y = y;
@@ -303,7 +348,13 @@ class Particle {
   }
 }
 
-/* ========================================================================== */
+/* ==========================================================================
+   Flower: un "canale" che mostra un soffione alla volta. Tiene le due corde
+   (rope1 = frase ricevere, rope2 = frase lasciare) come catene di punti, fa
+   avanzare le fasi del ciclo (updatePhase), la fisica (physics) e il disegno
+   delle lettere lungo le corde + delle particelle staccate (draw). Finito un
+   dato, avanza al successivo (advanceData) finché il canale ha dati.
+   ========================================================================== */
 class Flower {
   constructor(o) {
     this.baseX    = o.x;
