@@ -24,3 +24,19 @@ Aprire `http://localhost:8000`.
 - cartelle delle sei stazioni: un `index.html` e uno `sketch.js` per visualizzazione.
 
 Il workflow `.github/workflows/pages.yml` pubblica automaticamente il sito con GitHub Pages a ogni push su `main`.
+
+## Tecnologie e crediti
+
+L'intero progetto è stato sviluppato nell'ambiente di creative coding
+[p5.js](https://p5js.org): la copertina e le sei tavole animate delle stazioni
+sono sketch p5 (versione 1.11.13). p5.js è una libreria open
+source del [Processing Foundation](https://processingfoundation.org),
+distribuita sotto licenza GNU LGPL-2.1; i file della libreria inclusi nel
+repository conservano il proprio header di licenza originale.
+
+## Licenza
+
+Il codice di questo progetto (sketch, landing page e script) è rilasciato sotto
+licenza [MIT](LICENSE), per renderlo apertamente consultabile e riutilizzabile.
+Fanno eccezione i file della libreria p5.js, coperti dalla rispettiva licenza
+LGPL-2.1.
