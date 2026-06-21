@@ -1,0 +1,11 @@
+,ricevere_n,lasciare_n,ricevere_%,lasciare_%,delta_%
+saluto,29,10,18.4,6.1,12.3
+contatto/conversaz.,6,1,3.8,0.6,3.2
+rassicurazione,23,22,14.6,13.4,1.2
+affetto,6,5,3.8,3.0,0.8
+riconoscimento,13,4,8.2,2.4,5.8
+esortazione,8,18,5.1,11.0,-5.9
+augurio,12,39,7.6,23.8,-16.2
+negativo,1,3,0.6,1.8,-1.2
+nessuna/rifiuto,7,7,4.4,4.3,0.1
+altro,53,55,33.5,33.5,0.0

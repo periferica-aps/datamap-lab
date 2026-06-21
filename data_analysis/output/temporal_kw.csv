@@ -1,0 +1,12 @@
+scala,H,p,sig,eta_sq
+energia,5.01,0.2862,,0.006
+contentezza,3.59,0.4646,,-0.002
+controllo,2.61,0.6246,,-0.008
+vuoto_affollato,4.95,0.2922,,0.006
+silenzioso_rumoroso,1.8,0.772,,-0.013
+pulito_sporco,12.71,0.0128,*,0.051
+persone_simili,4.16,0.3854,,0.001
+sicurezza,2.21,0.697,,-0.01
+appartenenza,9.71,0.0455,*,0.033
+interazione,4.47,0.3462,,0.003
+velocita_percepita,3.07,0.5457,,-0.005
