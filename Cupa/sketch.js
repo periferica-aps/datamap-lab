@@ -79,6 +79,11 @@ const COL_LEAVE = "Quale parola vorresti LASCIARE a chi salirà su questo vagone
 const COL_AGE = "Quanti anni hai?";
 const COL_SUBMITTED_AT = "Submitted At";
 const COL_MOOD = "Stato d'animo";
+const COL_RECEIVE_INDEX = 23;
+const COL_LEAVE_INDEX = 24;
+const COL_AGE_INDEX = 6;
+const COL_SUBMITTED_AT_INDEX = 27;
+const COL_MOOD_INDEX = 28;
 
 const DEFAULT_RECEIVE = "respiro";
 const DEFAULT_LEAVE = "buon viaggio";
@@ -205,7 +210,7 @@ const PHASE2_LIFT_CENTER_WEIGHT = 0.45;
 const PHASE2_LIFT_TIP_WEIGHT = 0.55;
 
 /* ---- cornice / canvas finale ---- */
-const OUT_W = 1080, OUT_H = 1920;   // canvas finale (9:16)
+const { w: OUT_W, h: OUT_H } = getFrameOutputSize(); // canvas finale
 const W = 980, H = 1520;            // spazio nativo = area interna della cornice
                                     // (1080-2*FRAME_MARGIN_X) x (1920-FRAME_MARGIN_TOP-FRAME_MARGIN_BOTTOM)
 
@@ -236,11 +241,16 @@ function contentBounds() {
     return { left: 0, top: 0, right: W, bottom: H };
   }
 
+  const area = getSketchArea();
+  const s = area.w / W;
+  const ox = area.x;
+  const oy = area.y + (area.h - H * s) / 2;
+
   return {
-    left: -FRAME_MARGIN_X,
-    top: -FRAME_MARGIN_TOP,
-    right: W + FRAME_MARGIN_X,
-    bottom: H + FRAME_MARGIN_BOTTOM,
+    left: -ox / s,
+    top: -oy / s,
+    right: (width - ox) / s,
+    bottom: (height - oy) / s,
   };
 }
 
@@ -249,6 +259,15 @@ function parseSubmittedAt(v) {
   if (!m) return Number.MAX_SAFE_INTEGER;
   const [, dd, mm, yyyy, hh, min, ss] = m.map(Number);
   return new Date(yyyy, mm - 1, dd, hh, min, ss).getTime();
+}
+
+function rowValue(row, columnName, fallbackIndex) {
+  const byName = row.get(columnName);
+  if (byName !== undefined && byName !== null && byName !== "") return byName;
+  if (!Number.isInteger(fallbackIndex)) return byName;
+
+  const byIndex = row.get(fallbackIndex);
+  return byIndex !== undefined && byIndex !== null ? byIndex : byName;
 }
 
 // Stato d'animo -> mood (colore + verso della corolla). "triste" = azzurro
@@ -269,14 +288,15 @@ function prepareFlowerData() {
   };
 
   const rows = responsesTable.getRows().map((row, originalIndex) => {
-    const age = Number(String(row.get(COL_AGE)).replace(",", "."));
+    const submittedAt = rowValue(row, COL_SUBMITTED_AT, COL_SUBMITTED_AT_INDEX);
+    const age = Number(String(rowValue(row, COL_AGE, COL_AGE_INDEX)).replace(",", "."));
     return {
       originalIndex,
-      receive: row.get(COL_RECEIVE),
-      leave: row.get(COL_LEAVE),
-      submittedAt: row.get(COL_SUBMITTED_AT),
-      submittedMs: parseSubmittedAt(row.get(COL_SUBMITTED_AT)),
-      mood: row.get(COL_MOOD),
+      receive: rowValue(row, COL_RECEIVE, COL_RECEIVE_INDEX),
+      leave: rowValue(row, COL_LEAVE, COL_LEAVE_INDEX),
+      submittedAt,
+      submittedMs: parseSubmittedAt(submittedAt),
+      mood: rowValue(row, COL_MOOD, COL_MOOD_INDEX),
       age: Number.isFinite(age) ? age : null,
     };
   }).filter(row => hasUsableWord(row.receive) && hasUsableWord(row.leave));
