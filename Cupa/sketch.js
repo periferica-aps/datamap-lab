@@ -210,7 +210,7 @@ const PHASE2_LIFT_CENTER_WEIGHT = 0.45;
 const PHASE2_LIFT_TIP_WEIGHT = 0.55;
 
 /* ---- cornice / canvas finale ---- */
-const { w: OUT_W, h: OUT_H } = getFrameOutputSize(); // canvas finale
+const OUT_W = 1080, OUT_H = 1920;   // canvas finale (cornice)
 const W = 980, H = 1520;            // spazio nativo = area interna della cornice
                                     // (1080-2*FRAME_MARGIN_X) x (1920-FRAME_MARGIN_TOP-FRAME_MARGIN_BOTTOM)
 

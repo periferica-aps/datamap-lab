@@ -2,4 +2,16 @@
 Thumbs.db
 *.swp
 *~
-
+__pycache__
+videos_instagram/
+frames/
+frames_*/
+*.mp4
+videokit.html
+render_frames.py
+encode.sh
+make_video.sh
+export_instagram_all.sh
+templateFrame.social.js
+sketchStyle.social.css
+instagram.html
